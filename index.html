@@ -6,11 +6,51 @@
     <title>Document</title>
   </head>
   <body>
+    
     <iframe
       id="wp"
-      style="width: 100%; height: 40vh; border: 1px solid #000"
+      style="width: 100%; height: 90vh; border: 1px solid #000"
     ></iframe>
-    <div id="output" style="margin-top: 2em; font-family: monospace;"></div>
-    <script type="module" src="/src/main.js"></script>
+    <div id="output" style="margin-top: 2em; font-family: monospace"></div>
+
+    <script type="module">
+      // Use unpkg for convenience
+      import * as PlaygroundClient from "https://playground.wordpress.net/client/index.js";
+      const { startPlaygroundWeb } = PlaygroundClient;
+      console.log(PlaygroundClient);
+      const client = await startPlaygroundWeb({
+        iframe: document.getElementById("wp"),
+        remoteUrl: `https://playground.wordpress.net/remote.html`,
+        blueprint: {
+          preferredVersions: {
+            wp: "6.8",
+            php: "8.0",
+          },
+          landingPage: "/wp-admin",
+          login: true,
+          plugins: ["coblocks"],
+        },
+      });
+      
+      // Let's wait until Playground is fully loaded
+      await client.isReady();
+
+      const button = document.querySelector('button')
+      button.disabled = false
+      
+      window.playgroundMountDirectory = async () => {
+        const directoryHandle = await window.showDirectoryPicker()
+        window.parent.postMessage({
+          type: 'mount-directory-handle',
+          directoryHandle,
+          mountpoint: '/wordpress/wp-content/uploads/markdown/',
+        });
+        const mounted = await window.playground.listFiles('/wordpress/wp-content/uploads/markdown/')
+        console.assert(mounted.length > 0, 'Mounted directory is empty')
+      }
+
+    
+    </script>
+    <button disabled="disabled" onclick="playgroundMountDirectory()">Mount Directory</button>
   </body>
 </html>
